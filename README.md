@@ -4,7 +4,7 @@ House History Pack is a local property ledger for homeowners preparing a durable
 
 Live product: <https://house-history-pack.sociobot.in>
 
-Try the isolated sample record: <https://house-history-pack.sociobot.in/demo>
+Try the isolated sample record: <https://house-history-pack.sociobot.in/?demo=1>
 
 ## What it does
 
@@ -13,7 +13,8 @@ Try the isolated sample record: <https://house-history-pack.sociobot.in/demo>
 - Creates a PDF for selected assets, or a ZIP containing the PDF, structured JSON, and original evidence.
 - Downloads a password-protected full backup.
 - Works after the first visit when the network is disconnected.
-- Offers an optional $29 one-time Pack Plus license for custom cover text and reusable pack settings. Core records and every export format remain free.
+- Pack Plus costs $29 once. It adds custom cover text and reusable pack settings.
+- Core records and all exports stay free.
 
 The app provides record keeping, not legal, regulatory, safety, valuation, or building-compliance advice. Users are responsible for document rights and accuracy.
 
@@ -40,15 +41,19 @@ npm run build
 npm run preview
 ```
 
-`npm test` runs unit coverage plus desktop/mobile browser flows, an axe serious/critical scan, claimed export/backup/privacy checks from `/demo`, and an offline service-worker reload. The exact production build command is `npm run build`; deploy the generated `dist/` directory. Its `index.html` is at the root.
+`npm test` runs unit and browser checks. It covers demo exports, backups,
+privacy, accessibility, and offline reload. The production build command is
+`npm run build`; deploy the generated `dist/` directory. Its `index.html` is
+at the root.
 
 ## Sample demo
 
-Choose **Try it with sample data** or open `/demo`. Juniper House is a separate,
-disposable sample with systems, service history, due work, and a receipt. The
-banner can reset it or discard it before opening the real workspace. See
-[`.factory/demo.md`](.factory/demo.md) and [`.factory/claims.json`](.factory/claims.json)
-for the sandbox and exact claim-test commands.
+Choose **Try it with sample data** or open `?demo=1`. Juniper House is a
+separate, disposable sample with systems, service history, due work, and a
+receipt. The banner can reset it or discard it before opening the real
+workspace. See [`.factory/demo.md`](.factory/demo.md) and
+[`.factory/claims.json`](.factory/claims.json) for the sandbox and exact
+claim-test commands.
 
 ## Data and privacy
 

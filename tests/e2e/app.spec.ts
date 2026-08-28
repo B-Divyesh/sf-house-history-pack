@@ -58,10 +58,52 @@ test('reloads the application shell while offline', async ({ page, context }) =>
   await context.setOffline(false);
 });
 
+test('@claim:browser-local-storage Real records stay in browser storage and the demo cannot change them', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Set up your home' }).click();
+  await page.getByLabel(/Home name/).fill('Cedar House');
+  await page.getByRole('button', { name: 'Save home' }).click();
+  await expect(page.getByText('Cedar House', { exact: true })).toBeVisible();
+
+  await page.goto('/?demo=1');
+  await expect(page).toHaveTitle('Demo — House History Pack');
+  await expect(page.getByText('Demo — sample data, nothing is saved')).toBeVisible();
+  await expect(page.getByText('Juniper House', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Add record' }).click();
+  await page.getByRole('button', { name: /Asset or system/ }).click();
+  await page.getByLabel('Name Required').fill('Demo-only boiler');
+  await page.getByRole('button', { name: 'Save asset' }).click();
+  await page.getByRole('button', { name: 'Assets' }).first().click();
+  await expect(page.getByRole('heading', { name: 'Demo-only boiler' })).toBeVisible();
+  await page.getByRole('button', { name: 'Reset demo' }).click();
+  await expect(page.getByRole('heading', { name: 'Demo-only boiler' })).not.toBeVisible();
+
+  const storage = await page.evaluate(async () => {
+    const homeName = await new Promise<string | null>((resolve, reject) => {
+      const request = indexedDB.open('house-history-pack');
+      request.onsuccess = () => {
+        const get = request.result.transaction('home').objectStore('home').get('home');
+        get.onsuccess = () => resolve((get.result as { name?: string } | undefined)?.name ?? null);
+        get.onerror = () => reject(get.error);
+      };
+      request.onerror = () => reject(request.error);
+    });
+    return { homeName, names: (await indexedDB.databases()).map((database) => database.name) };
+  });
+  expect(storage.homeName).toBe('Cedar House');
+  expect(storage.names).toEqual(expect.arrayContaining(['house-history-pack', 'demo:house-history-pack']));
+
+  await page.getByRole('button', { name: 'Start for real' }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByText('Cedar House', { exact: true })).toBeVisible();
+  const databases = await page.evaluate(async () => (await indexedDB.databases()).map((database) => database.name));
+  expect(databases).not.toContain('demo:house-history-pack');
+});
+
 test('@claim:demo-isolated Sample data is one click, isolated, and resettable', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Try it with sample data' }).click();
-  await expect(page).toHaveURL(/\/demo$/);
+  await expect(page).toHaveURL(/\?demo=1$/);
   await expect(page.getByText('Demo — sample data, nothing is saved')).toBeVisible();
   await page.getByRole('button', { name: 'Assets' }).first().click();
   await expect(page.getByRole('heading', { name: 'Water heater' })).toBeVisible();
@@ -295,10 +337,31 @@ test('section navigation preserves history, moves focus, and announces the view'
   await expect(page.locator('#route-announcer')).toHaveText('Assets view');
 });
 
-test('metadata, touch target, and manifest links satisfy the public-site contract', async ({ page }) => {
+test('public routes have complete titles, social metadata, touch targets, and install links', async ({ page }) => {
+  const routes = [
+    ['/', 'House History Pack — Your home, documented'],
+    ['/?demo=1', 'Demo — House History Pack'],
+    ['/privacy/', 'Privacy — House History Pack'],
+    ['/terms/', 'Terms — House History Pack'],
+    ['/404.html', 'Page not found — House History Pack']
+  ] as const;
+  for (const [route, title] of routes) {
+    await page.goto(route);
+    await expect(page).toHaveTitle(title);
+    await expect(page.locator('meta[name="description"]')).toHaveCount(1);
+    await expect(page.locator('link[rel="canonical"]')).toHaveCount(1);
+    await expect(page.locator('meta[property="og:type"]')).toHaveAttribute('content', 'website');
+    await expect(page.locator('meta[property="og:title"]')).toHaveCount(1);
+    await expect(page.locator('meta[property="og:description"]')).toHaveCount(1);
+    await expect(page.locator('meta[property="og:url"]')).toHaveCount(1);
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /social-card\.jpg$/);
+    await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary_large_image');
+    await expect(page.locator('meta[name="twitter:title"]')).toHaveCount(1);
+    await expect(page.locator('meta[name="twitter:description"]')).toHaveCount(1);
+    await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute('content', /social-card\.jpg$/);
+  }
   await page.goto('/');
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://house-history-pack.sociobot.in/');
-  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /social-card\.jpg$/);
   await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveCount(1);
   await expect(page.locator('link[rel="manifest"]')).toHaveAttribute('href', '/manifest.json');
   const brand = await page.locator('.brand').boundingBox();

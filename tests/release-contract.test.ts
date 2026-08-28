@@ -13,7 +13,7 @@ describe('static release contract', () => {
     expect(config.responseOverrides['404']).toEqual({ rewrite: '/404.html' });
   });
 
-  it('ships complete social, install, and legal-page metadata', () => {
+  it('ships complete social, install, legal-page, and 404 metadata', () => {
     const index = readFileSync('index.html', 'utf8');
     expect(index).toContain('rel="canonical"');
     expect(index).toContain('property="og:image"');
@@ -24,6 +24,13 @@ describe('static release contract', () => {
       const page = readFileSync(path, 'utf8');
       expect(page).toContain('<footer>');
       expect(page).toContain('Built by Param Factory');
+      for (const name of ['description', 'twitter:card', 'twitter:title', 'twitter:description', 'twitter:image']) {
+        expect(page).toContain(`name="${name}"`);
+      }
+      for (const name of ['og:type', 'og:title', 'og:description', 'og:url', 'og:image']) {
+        expect(page).toContain(`property="${name}"`);
+      }
+      expect(page).toContain('rel="canonical"');
     }
   });
 

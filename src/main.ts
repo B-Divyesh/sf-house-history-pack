@@ -14,7 +14,10 @@ let online = navigator.onLine;
 let plus = false;
 let pendingImport: File | null = null;
 let packAssetIds = new Set<string>();
-const demoMode = location.pathname.replace(/\/+$/, '') === '/demo';
+// Keep the shareable query entry point and the short /demo route equivalent.
+// Both select the demo database before any storage call is made.
+const demoMode = location.pathname.replace(/\/+$/, '') === '/demo' || new URLSearchParams(location.search).get('demo') === '1';
+const demoUrl = '/?demo=1';
 const VIEW_LABELS: Record<ViewName, string> = { overview: 'Overview', assets: 'Assets', history: 'History', tasks: 'Tasks', pack: 'Build pack' };
 
 function pageTitle(next: ViewName): string {
@@ -42,7 +45,7 @@ function render(): void {
   const warranties = data.assets.filter((asset) => asset.warrantyUntil).sort((a, b) => a.warrantyUntil.localeCompare(b.warrantyUntil));
   app.innerHTML = `
     <header class="topbar">
-      <a class="brand" href="${demoMode ? '/demo' : '/'}" aria-label="House History Pack overview"><span class="brand-mark"><i></i><i></i><i></i></span><span>House History Pack</span></a>
+      <a class="brand" href="${demoMode ? demoUrl : '/'}" aria-label="House History Pack overview"><span class="brand-mark"><i></i><i></i><i></i></span><span>House History Pack</span></a>
       <div class="top-actions">
         <span class="privacy-chip"><span class="status-dot"></span>Stored on this device</span>
         <button class="button primary compact" data-action="quick-add">${icon('plus')} Add record</button>
@@ -62,8 +65,8 @@ function render(): void {
         </div>
         ${renderView()}
       </main>
-      <aside class="signals" aria-label="Next signals">
-        <div class="signal-heading"><p class="eyebrow">Next signals</p><span class="live-tag">${online ? 'Local & ready' : 'Offline & ready'}</span></div>
+      <aside class="signals" aria-label="Upcoming tasks and warranties">
+        <div class="signal-heading"><p class="eyebrow">Upcoming tasks and warranties</p><span class="live-tag">${online ? 'Local & ready' : 'Offline & ready'}</span></div>
         ${!due.length && !warranties.length ? `<div class="quiet-state"><span class="orb"></span><h2>Nothing urgent</h2><p>Due work and warranty dates will surface here.</p><button class="text-button" data-action="add-task">Add a task</button></div>` : `
           <div class="signal-list">
             ${due.slice(0, 4).map((task) => `<button class="signal-row" data-view="tasks"><span class="signal-icon ${dueState(task.dueDate)}"></span><span><b>${escapeHtml(task.title)}</b><small>${dueState(task.dueDate) === 'overdue' ? 'Overdue · ' : 'Due '}${formatDate(task.dueDate)}</small></span></button>`).join('')}
@@ -96,7 +99,7 @@ function renderOverview(): string {
     <div class="hero-pane ${hasRecords ? 'compact-hero' : ''}">
       <picture><source srcset="/assets/house-ledger.webp" type="image/webp"><img src="/assets/house-ledger.webp" width="1200" height="800" alt="A glass architectural cutaway of a house with repair documents organized through its rooms" fetchpriority="high" decoding="async"></picture>
       <div class="hero-copy">
-        <p class="eyebrow">The proof travels with the home</p>
+        <p class="eyebrow">Keep your home history ready to share</p>
         <h2>${hasRecords ? `A clear record is taking shape.` : `One record for every chapter of the house.`}</h2>
         <p>Keep appliances, repairs, permits, warranties, and the evidence behind them together—ready for the next service call or handover.</p>
         ${!data.home ? `<div class="hero-actions"><button class="button primary" data-action="try-demo">Try it with sample data</button><button class="button secondary" data-action="setup-home">Set up your home</button><small>Loads a sample house in a separate, disposable space.</small></div><ul class="hero-facts"><li>Stored on this device</li><li>Works offline after the first visit</li><li>Core pack free; Pack Plus is $29 once</li></ul>` : `<button class="button primary" data-action="quick-add">Add your next record</button>`}
@@ -108,7 +111,7 @@ function renderOverview(): string {
       <button data-view="tasks"><strong>${data.tasks.filter((task) => !task.complete).length}</strong><span>Open tasks</span><small>Seasonal & next-due work</small></button>
       <button data-view="pack"><strong>${data.attachments.length}</strong><span>Evidence files</span><small>Receipts, manuals & permits</small></button>
     </div>
-    <section class="recent-section"><div class="section-heading"><div><p class="eyebrow">The property ledger</p><h2>Recent history</h2></div><button class="text-button" data-view="history">View all history</button></div>
+    <section class="recent-section"><div class="section-heading"><div><p class="eyebrow">Recent home history</p><h2>Recent history</h2></div><button class="text-button" data-view="history">View all history</button></div>
       ${recent.length ? `<ol class="timeline">${recent.map(eventRow).join('')}</ol>` : `<div class="empty-row"><span class="empty-mark">01</span><div><h3>The first entry starts the chain</h3><p>Record a service visit, repair, permit, inspection, or contractor note.</p></div><button class="button secondary" data-action="add-event">Log history</button></div>`}
     </section>
   </section>`;
@@ -345,7 +348,7 @@ function bindEvents(): void {
     const action = element.dataset.action; const id = element.dataset.id || '';
     if (element.matches('a')) return;
     if (action === 'quick-add') (document.querySelector('#record-menu') as HTMLDialogElement).showModal();
-    if (action === 'try-demo') location.assign('/demo');
+    if (action === 'try-demo') location.assign(demoUrl);
     if (action === 'reset-demo' && demoMode) {
       await replaceData(sampleData()); data = await loadData(); packAssetIds = new Set(data.assets.map((asset) => asset.id)); render(); showToast('Sample data reset.');
     }
@@ -426,7 +429,7 @@ async function init(): Promise<void> {
     packAssetIds = new Set(data.settings.presetAssetIds.length ? data.settings.presetAssetIds : data.assets.map((asset) => asset.id));
     render();
     document.title = pageTitle(view);
-    if (demoMode) document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute('href', 'https://house-history-pack.sociobot.in/demo');
+    if (demoMode) document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute('href', 'https://house-history-pack.sociobot.in/?demo=1');
   }
   catch {
     app.innerHTML = `<main id="main" class="fatal"><h1>Your home record could not open.</h1><p>This browser blocked local storage. Check private-browsing or site-storage settings, then reload.</p><button id="retry-open" class="button primary">Try again</button></main>`;

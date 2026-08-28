@@ -1,5 +1,12 @@
 [
   {
+    "id": "browser-local-storage",
+    "claim": "Records stay in this browser, and demo records cannot change real records.",
+    "where": "landing storage fact, privacy note, footer, README, and privacy policy",
+    "test": "npm run test:e2e -- --grep @claim:browser-local-storage",
+    "sandbox": "fresh browser context; save a real home, enter ?demo=1, reset sample data, and assert separate IndexedDB databases preserve the real home"
+  },
+  {
     "id": "demo-isolated",
     "claim": "Try it with sample data opens a separate, disposable sample record.",
     "where": "landing action and demo banner",
