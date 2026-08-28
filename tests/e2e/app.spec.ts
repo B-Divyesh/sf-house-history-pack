@@ -6,7 +6,7 @@ import JSZip from 'jszip';
 test('creates a home record with evidence and exports a selected PDF', async ({ page }, testInfo) => {
   await page.goto('/');
   await expect(page).toHaveTitle(/House History Pack/);
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Your home, documented.');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Keep your home history ready to share.');
 
   await page.getByRole('button', { name: 'Set up your home' }).click();
   await page.getByLabel(/Home name/).fill('Maple House');
@@ -53,7 +53,7 @@ test('reloads the application shell while offline', async ({ page, context }) =>
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await context.setOffline(true);
   await page.reload();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Your home, documented.');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Keep your home history ready to share.');
   await expect(page.getByText('Offline & ready')).toBeVisible();
   await context.setOffline(false);
 });
@@ -235,6 +235,8 @@ test('@claim:encrypted-backup Demo backup rejects a wrong password and restores 
 });
 
 test('@claim:pack-plus-price Demo shows the one-time Pack Plus price and leaves exports available', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByText('Pack Plus is $29 once for custom cover text and saved pack settings')).toBeVisible();
   await page.goto('/demo');
   await page.getByRole('button', { name: 'Build pack' }).first().click();
   await expect(page.getByText('One-time purchase, $29.')).toBeVisible();
@@ -339,7 +341,7 @@ test('section navigation preserves history, moves focus, and announces the view'
 
 test('public routes have complete titles, social metadata, touch targets, and install links', async ({ page }) => {
   const routes = [
-    ['/', 'House History Pack — Your home, documented'],
+    ['/', 'House History Pack — Keep home history ready'],
     ['/?demo=1', 'Demo — House History Pack'],
     ['/privacy/', 'Privacy — House History Pack'],
     ['/terms/', 'Terms — House History Pack'],
@@ -372,6 +374,10 @@ test('first actions remain visible at 1280 × 720 and cited mobile controls meet
   if (testInfo.project.name === 'chromium') {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Keep your home history ready to share.');
+    await expect(page.getByRole('heading', { name: 'How to make a house history pack' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Keep every home record together.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Add your first home record' })).toBeVisible();
     for (const name of ['Try it with sample data', 'Set up your home']) {
       const box = await page.getByRole('button', { name }).boundingBox();
       expect(box, `${name} has a box`).not.toBeNull();

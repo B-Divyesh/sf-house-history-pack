@@ -43,10 +43,10 @@
   },
   {
     "id": "pack-plus-price",
-    "claim": "Pack Plus is a one-time $29 purchase and core exports remain free.",
+    "claim": "Pack Plus is a one-time $29 purchase for custom cover text and saved pack settings; core exports remain free.",
     "where": "landing facts and Pack Plus panel",
     "test": "npm run test:e2e -- --grep @claim:pack-plus-price",
-    "sandbox": "fresh browser context at /demo; assert the displayed price and enabled free export controls"
+    "sandbox": "fresh browser context; assert the landing price and named unlocks, then use /demo to assert enabled free export controls"
   },
   {
     "id": "maintenance-tracking",

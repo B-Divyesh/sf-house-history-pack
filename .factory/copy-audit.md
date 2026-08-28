@@ -4,13 +4,13 @@
 
 | Text | Words | Result |
 | --- | ---: | --- |
-| Your home, documented. | 3 | pass |
+| Keep your home history ready to share. | 7 | pass |
 | For homeowners building a durable service and handover record. | 9 | pass |
 | Keep appliances, repairs, permits, warranties, and the evidence behind them together—ready for the next service call or handover. | 17 | pass |
 | Loads a sample house in a separate, disposable space. | 10 | pass |
 | Stored on this device | 4 | pass |
 | Works offline after the first visit | 6 | pass |
-| Core pack free; Pack Plus is $29 once | 8 | pass |
+| Pack Plus is $29 once for custom cover text and saved pack settings | 13 | pass |
 
 ## Revised review copy
 
@@ -19,6 +19,12 @@
 | Hero label | Keep your home history ready to share | 7 | pass |
 | History label | Recent home history | 3 | pass |
 | Signals label | Upcoming tasks and warranties | 4 | pass |
+| Landing record heading | Keep every home record together. | 5 | pass |
+| Landing empty heading | Add your first home record | 5 | pass |
+| How-it-works heading | How to make a house history pack | 7 | pass |
+| How-it-works step | Add systems | 2 | pass |
+| How-it-works step | Log work and attach evidence | 5 | pass |
+| How-it-works step | Export a pack | 3 | pass |
 | README price | Pack Plus costs $29 once. | 5 | pass |
 | README price | It adds custom cover text and reusable pack settings. | 9 | pass |
 | README free boundary | Core records and all exports stay free. | 7 | pass |

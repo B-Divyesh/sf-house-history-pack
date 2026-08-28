@@ -21,7 +21,7 @@ const demoUrl = '/?demo=1';
 const VIEW_LABELS: Record<ViewName, string> = { overview: 'Overview', assets: 'Assets', history: 'History', tasks: 'Tasks', pack: 'Build pack' };
 
 function pageTitle(next: ViewName): string {
-  if (next === 'overview') return demoMode ? 'Demo — House History Pack' : 'House History Pack — Your home, documented';
+  if (next === 'overview') return demoMode ? 'Demo — House History Pack' : 'House History Pack — Keep home history ready';
   return `${VIEW_LABELS[next]} — House History Pack`;
 }
 
@@ -60,7 +60,7 @@ function render(): void {
       </nav>
       <main id="main" tabindex="-1">
         <div class="page-heading">
-          <div><p class="eyebrow">${escapeHtml(data.home?.name || 'A private record for your property')}</p><h1 tabindex="-1">Your home, documented.</h1>${!data.home ? '<p class="audience">For homeowners building a durable service and handover record.</p>' : ''}</div>
+          <div><p class="eyebrow">${escapeHtml(data.home?.name || 'A private record for your property')}</p><h1 tabindex="-1">Keep your home history ready to share.</h1>${!data.home ? '<p class="audience">For homeowners building a durable service and handover record.</p>' : ''}</div>
           ${data.home ? `<p class="address">${escapeHtml(data.home.address || 'Address kept private')}<span>${data.assets.length} assets · ${data.events.length} history records</span></p>` : ''}
         </div>
         ${renderView()}
@@ -75,7 +75,7 @@ function render(): void {
         <div class="local-note"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 10V8a5 5 0 0 1 10 0v2M5 10h14v10H5z"/></svg><p><strong>Private by default</strong>Your records and files stay in this browser unless you export them.</p></div>
       </aside>
     </div>
-    <footer><span>House records stored on this device · AI-assisted original illustration</span><span><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="https://sociobot.in" rel="external">Built by Param Factory</a><small>v1.0.1</small><button class="footer-link" data-action="import">Import backup</button></span><input id="import-file" class="visually-hidden" type="file" accept=".hhpack,.json,application/json" aria-label="Choose a House History Pack backup to import" /></footer>
+    <footer><span>Private home records for service and handover.</span><span><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="https://sociobot.in" rel="external">Built by Param Factory</a><small>v1.0.1</small><button class="footer-link" data-action="import">Import backup</button></span><input id="import-file" class="visually-hidden" type="file" accept=".hhpack,.json,application/json" aria-label="Choose a House History Pack backup to import" /></footer>
     ${dialogs()}
     <div id="route-announcer" class="visually-hidden" role="status" aria-live="polite"></div>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -100,9 +100,9 @@ function renderOverview(): string {
       <picture><source srcset="/assets/house-ledger.webp" type="image/webp"><img src="/assets/house-ledger.webp" width="1200" height="800" alt="A glass architectural cutaway of a house with repair documents organized through its rooms" fetchpriority="high" decoding="async"></picture>
       <div class="hero-copy">
         <p class="eyebrow">Keep your home history ready to share</p>
-        <h2>${hasRecords ? `A clear record is taking shape.` : `One record for every chapter of the house.`}</h2>
+        <h2>${hasRecords ? `Your home records are ready to use.` : `Keep every home record together.`}</h2>
         <p>Keep appliances, repairs, permits, warranties, and the evidence behind them together—ready for the next service call or handover.</p>
-        ${!data.home ? `<div class="hero-actions"><button class="button primary" data-action="try-demo">Try it with sample data</button><button class="button secondary" data-action="setup-home">Set up your home</button><small>Loads a sample house in a separate, disposable space.</small></div><ul class="hero-facts"><li>Stored on this device</li><li>Works offline after the first visit</li><li>Core pack free; Pack Plus is $29 once</li></ul>` : `<button class="button primary" data-action="quick-add">Add your next record</button>`}
+        ${!data.home ? `<div class="hero-actions"><button class="button primary" data-action="try-demo">Try it with sample data</button><button class="button secondary" data-action="setup-home">Set up your home</button><small>Loads a sample house in a separate, disposable space.</small></div><ul class="hero-facts"><li>Stored on this device</li><li>Works offline after the first visit</li><li>Pack Plus is $29 once for custom cover text and saved pack settings</li></ul>` : `<button class="button primary" data-action="quick-add">Add your next record</button>`}
       </div>
     </div>
     <div class="metric-strip" aria-label="Record summary">
@@ -111,8 +111,16 @@ function renderOverview(): string {
       <button data-view="tasks"><strong>${data.tasks.filter((task) => !task.complete).length}</strong><span>Open tasks</span><small>Seasonal & next-due work</small></button>
       <button data-view="pack"><strong>${data.attachments.length}</strong><span>Evidence files</span><small>Receipts, manuals & permits</small></button>
     </div>
+    <section class="how-it-works" aria-labelledby="how-it-works-title">
+      <div class="section-heading"><div><p class="eyebrow">A clear path from receipt to record</p><h2 id="how-it-works-title">How to make a house history pack</h2></div></div>
+      <ol>
+        <li><span>01</span><div><h3>Add systems</h3><p>Name the appliances and systems you need to identify later.</p></div></li>
+        <li><span>02</span><div><h3>Log work and attach evidence</h3><p>Save repairs, service dates, permits, and the files behind them.</p></div></li>
+        <li><span>03</span><div><h3>Export a pack</h3><p>Choose the records to share, then download a PDF or ZIP.</p></div></li>
+      </ol>
+    </section>
     <section class="recent-section"><div class="section-heading"><div><p class="eyebrow">Recent home history</p><h2>Recent history</h2></div><button class="text-button" data-view="history">View all history</button></div>
-      ${recent.length ? `<ol class="timeline">${recent.map(eventRow).join('')}</ol>` : `<div class="empty-row"><span class="empty-mark">01</span><div><h3>The first entry starts the chain</h3><p>Record a service visit, repair, permit, inspection, or contractor note.</p></div><button class="button secondary" data-action="add-event">Log history</button></div>`}
+      ${recent.length ? `<ol class="timeline">${recent.map(eventRow).join('')}</ol>` : `<div class="empty-row"><span class="empty-mark">01</span><div><h3>Add your first home record</h3><p>Record a service visit, repair, permit, inspection, or contractor note.</p></div><button class="button secondary" data-action="add-event">Log history</button></div>`}
     </section>
   </section>`;
 }
