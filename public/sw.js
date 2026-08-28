@@ -1,5 +1,5 @@
-const VERSION = 'hhp-shell-v2';
-const ASSETS = 'hhp-assets-v2';
+const VERSION = 'hhp-shell-v3';
+const ASSETS = 'hhp-assets-v3';
 const SHELL = ['/', '/index.html', '/offline.html', '/manifest.webmanifest', '/assets/house-ledger.webp', '/assets/icon-192.png', '/privacy/', '/terms/'];
 
 self.addEventListener('install', (event) => {

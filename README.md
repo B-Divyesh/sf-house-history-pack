@@ -1,16 +1,18 @@
 # House History Pack
 
-House History Pack is a private, offline-first property ledger for homeowners. It keeps appliance and system details, repairs, service visits, permits, contractor notes, warranties, seasonal work, and original evidence files together. The primary output is a selectable PDF or ZIP packet that can be handed to a buyer or service person.
+House History Pack is a local property ledger for homeowners preparing a durable service and handover record. It keeps appliance and system details, repairs, service visits, permits, contractor notes, warranties, seasonal work, and original evidence files together.
 
 Live product: <https://house-history-pack.sociobot.in>
 
+Try the isolated sample record: <https://house-history-pack.sociobot.in/demo>
+
 ## What it does
 
-- Stores home, asset, history, task, and attachment records locally in IndexedDB.
+- Keeps home, asset, history, task, and attachment records in this browser.
 - Tracks warranty dates and upcoming or repeating maintenance.
 - Creates a PDF for selected assets, or a ZIP containing the PDF, structured JSON, and original evidence.
-- Exports and restores full portable JSON backups, with optional AES-GCM encryption and a password-derived key.
-- Installs as a PWA and works after the network is disconnected.
+- Downloads a password-protected full backup.
+- Works after the first visit when the network is disconnected.
 - Offers an optional $29 one-time Pack Plus license for custom cover text and reusable pack settings. Core records and every export format remain free.
 
 The app provides record keeping, not legal, regulatory, safety, valuation, or building-compliance advice. Users are responsible for document rights and accuracy.
@@ -36,11 +38,19 @@ npm run build
 npm run preview
 ```
 
-`npm test` runs unit coverage plus desktop/mobile browser flows, an axe serious/critical scan, a real PDF download, and an offline service-worker reload. The exact production build command is `npm run build`; deploy the generated `dist/` directory. Its `index.html` is at the root.
+`npm test` runs unit coverage plus desktop/mobile browser flows, an axe serious/critical scan, claimed export/backup/privacy checks from `/demo`, and an offline service-worker reload. The exact production build command is `npm run build`; deploy the generated `dist/` directory. Its `index.html` is at the root.
+
+## Sample demo
+
+Choose **Try it with sample data** or open `/demo`. Juniper House is a separate,
+disposable sample with systems, service history, due work, and a receipt. The
+banner can reset it or discard it before opening the real workspace. See
+[`.factory/demo.md`](.factory/demo.md) and [`.factory/claims.json`](.factory/claims.json)
+for the sandbox and exact claim-test commands.
 
 ## Data and privacy
 
-There is no account, analytics, advertising, cloud sync, CDN font, or runtime tracking script. Browser site-data controls can erase local records, so encrypted backups should be created regularly and tested. Unencrypted PDFs, ZIPs, and JSON backups may contain sensitive addresses, serial numbers, invoices, or permits.
+There is no account, analytics, advertising, cloud sync, CDN font, or runtime tracking script. Browser site-data controls can erase local records. Unencrypted PDFs, ZIPs, and JSON backups may contain sensitive addresses, serial numbers, invoices, or permits.
 
 See the in-product [privacy policy](https://house-history-pack.sociobot.in/privacy/) and [terms](https://house-history-pack.sociobot.in/terms/).
 

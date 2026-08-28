@@ -1,16 +1,27 @@
 import type { AppData, Attachment, Home, Settings } from './types';
 
-const DB_NAME = 'house-history-pack';
+const REAL_DB_NAME = 'house-history-pack';
 const DB_VERSION = 1;
 const STORES = ['home', 'assets', 'events', 'tasks', 'attachments', 'settings'] as const;
 type StoreName = (typeof STORES)[number];
 
 let dbPromise: Promise<IDBDatabase> | null = null;
+let dbName = REAL_DB_NAME;
+
+/** Select the isolated store before the app reads or writes any records. */
+export function setStorageNamespace(namespace: 'real' | 'demo'): void {
+  dbName = namespace === 'demo' ? 'demo:house-history-pack' : REAL_DB_NAME;
+  dbPromise = null;
+}
+
+export function storageNamespace(): 'real' | 'demo' {
+  return dbName.startsWith('demo:') ? 'demo' : 'real';
+}
 
 function openDb(): Promise<IDBDatabase> {
   if (dbPromise) return dbPromise;
   dbPromise = new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    const request = indexedDB.open(dbName, DB_VERSION);
     request.onupgradeneeded = () => {
       const db = request.result;
       for (const store of STORES) {
@@ -62,6 +73,21 @@ export async function clearAll(): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error ?? new Error('Could not clear local records.'));
+  });
+}
+
+/** Demo data is disposable: remove its entire database when the visitor leaves. */
+export async function discardCurrentDatabase(): Promise<void> {
+  const current = dbName;
+  if (dbPromise) {
+    try { (await dbPromise).close(); } catch { /* no open database to close */ }
+  }
+  dbPromise = null;
+  await new Promise<void>((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(current);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error ?? new Error('Could not discard local demo data.'));
+    request.onblocked = () => resolve();
   });
 }
 

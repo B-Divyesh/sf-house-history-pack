@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { dueState, escapeHtml, formatDate, safeFilename } from '../src/utils';
 import { decryptBackup, encryptBackup } from '../src/backup';
+import { createZip } from '../src/exporter';
+import { sampleData } from '../src/demo';
 import type { AppData } from '../src/types';
+import JSZip from 'jszip';
 
 describe('record formatting', () => {
   it('escapes user content before rendering', () => {
@@ -37,5 +40,19 @@ describe('encrypted portable backup', () => {
     const data = { home: null, assets: [], events: [], tasks: [], attachments: [], settings: { id: 'settings' as const, customPackTitle: '', handoverNote: '', presetAssetIds: [], updatedAt: '' } };
     const encrypted = await encryptBackup(data, 'right-password');
     await expect(decryptBackup(await encrypted.text(), 'wrong-password')).rejects.toThrow('password');
+  });
+});
+
+describe('sample pack contents', () => {
+  it('keeps the sample receipt in the exported ZIP', async () => {
+    const data = sampleData();
+    const pack = await createZip(data, {
+      assetIds: data.assets.map((asset) => asset.id), includeGeneral: true, includeTasks: true,
+      includeAttachments: true, title: 'Juniper House history pack', handoverNote: ''
+    });
+    const zip = await JSZip.loadAsync(await pack.arrayBuffer());
+    expect(Object.keys(zip.files)).toEqual(expect.arrayContaining([
+      'house-history-report.pdf', 'records.json', 'README.txt', 'evidence/heater-service-northline-service-receipt.txt'
+    ]));
   });
 });

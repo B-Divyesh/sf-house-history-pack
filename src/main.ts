@@ -1,5 +1,6 @@
 import './style.css';
-import { all, loadData, put, remove, replaceData } from './db';
+import { all, discardCurrentDatabase, loadData, put, remove, replaceData, setStorageNamespace } from './db';
+import { sampleData } from './demo';
 import { decryptBackup, encryptBackup, fromPortable, toPortable } from './backup';
 import { acceptReturnedLicense, cachedUnlock, checkoutUrl, saveLicense, verifyLicense } from './license';
 import type { AppData, Asset, Attachment, HistoryEvent, Task, ViewName } from './types';
@@ -12,6 +13,7 @@ let online = navigator.onLine;
 let plus = false;
 let pendingImport: File | null = null;
 let packAssetIds = new Set<string>();
+const demoMode = location.pathname.replace(/\/+$/, '') === '/demo';
 
 const icon = (name: string) => ({
   overview: '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v9h-6v-6h-4v6H4Z"/></svg>',
@@ -33,12 +35,13 @@ function render(): void {
   const warranties = data.assets.filter((asset) => asset.warrantyUntil).sort((a, b) => a.warrantyUntil.localeCompare(b.warrantyUntil));
   app.innerHTML = `
     <header class="topbar">
-      <a class="brand" href="#overview" data-view="overview" aria-label="House History Pack overview"><span class="brand-mark"><i></i><i></i><i></i></span><span>House History Pack</span></a>
+      <a class="brand" href="${demoMode ? '/demo' : '/'}" aria-label="House History Pack overview"><span class="brand-mark"><i></i><i></i><i></i></span><span>House History Pack</span></a>
       <div class="top-actions">
         <span class="privacy-chip"><span class="status-dot"></span>Stored on this device</span>
         <button class="button primary compact" data-action="quick-add">${icon('plus')} Add record</button>
       </div>
     </header>
+    ${demoMode ? `<aside class="demo-banner" aria-label="Demo controls"><strong>Demo — sample data, nothing is saved</strong><span>Juniper House is separate from your records.</span><button class="text-button" data-action="reset-demo">Reset demo</button><button class="button secondary demo-start" data-action="start-real">Start for real</button></aside>` : ''}
     <div class="app-layout">
       <nav class="side-nav" aria-label="Primary navigation">
         ${navItem('overview', 'Overview')}${navItem('assets', 'Assets')}${navItem('history', 'History')}${navItem('tasks', 'Tasks')}${navItem('pack', 'Build pack')}
@@ -47,7 +50,7 @@ function render(): void {
       </nav>
       <main id="main" tabindex="-1">
         <div class="page-heading">
-          <div><p class="eyebrow">${escapeHtml(data.home?.name || 'A private record for your property')}</p><h1>Your home, documented.</h1></div>
+          <div><p class="eyebrow">${escapeHtml(data.home?.name || 'A private record for your property')}</p><h1>Your home, documented.</h1>${!data.home ? '<p class="audience">For homeowners building a durable service and handover record.</p>' : ''}</div>
           ${data.home ? `<p class="address">${escapeHtml(data.home.address || 'Address kept private')}<span>${data.assets.length} assets · ${data.events.length} history records</span></p>` : ''}
         </div>
         ${renderView()}
@@ -89,7 +92,7 @@ function renderOverview(): string {
         <p class="eyebrow">The proof travels with the home</p>
         <h2>${hasRecords ? `A clear record is taking shape.` : `One record for every chapter of the house.`}</h2>
         <p>Keep appliances, repairs, permits, warranties, and the evidence behind them together—ready for the next service call or handover.</p>
-        ${!data.home ? `<button class="button primary" data-action="setup-home">Set up your home</button>` : `<button class="button primary" data-action="quick-add">Add your next record</button>`}
+        ${!data.home ? `<div class="hero-actions"><button class="button primary" data-action="try-demo">Try it with sample data</button><button class="button secondary" data-action="setup-home">Set up your home</button><small>Loads a sample house in a separate, disposable space.</small></div><ul class="hero-facts"><li>Stored on this device</li><li>Works offline after the first visit</li><li>Core pack free; Pack Plus is $29 once</li></ul>` : `<button class="button primary" data-action="quick-add">Add your next record</button>`}
       </div>
     </div>
     <div class="metric-strip" aria-label="Record summary">
@@ -310,6 +313,11 @@ function bindEvents(): void {
     const action = element.dataset.action; const id = element.dataset.id || '';
     if (element.matches('a')) return;
     if (action === 'quick-add') (document.querySelector('#record-menu') as HTMLDialogElement).showModal();
+    if (action === 'try-demo') location.assign('/demo');
+    if (action === 'reset-demo' && demoMode) {
+      await replaceData(sampleData()); data = await loadData(); packAssetIds = new Set(data.assets.map((asset) => asset.id)); render(); showToast('Sample data reset.');
+    }
+    if (action === 'start-real' && demoMode) { await discardCurrentDatabase(); location.assign('/'); }
     if (action === 'setup-home' || action === 'settings') openForm('home');
     if (action === 'add-asset' || action === 'edit-asset') openForm('asset', id);
     if (action === 'add-event' || action === 'edit-event') openForm('event', id);
@@ -364,9 +372,16 @@ async function registerServiceWorker(): Promise<void> {
 }
 
 async function init(): Promise<void> {
+  setStorageNamespace(demoMode ? 'demo' : 'real');
+  if (demoMode) document.title = 'Demo — House History Pack';
   acceptReturnedLicense(); plus = cachedUnlock();
   const hash = location.hash.slice(1) as ViewName; if (['overview', 'assets', 'history', 'tasks', 'pack'].includes(hash)) view = hash;
-  try { data = await loadData(); packAssetIds = new Set(data.settings.presetAssetIds.length ? data.settings.presetAssetIds : data.assets.map((asset) => asset.id)); render(); }
+  try {
+    data = await loadData();
+    if (demoMode && !data.home) { await replaceData(sampleData()); data = await loadData(); }
+    packAssetIds = new Set(data.settings.presetAssetIds.length ? data.settings.presetAssetIds : data.assets.map((asset) => asset.id));
+    render();
+  }
   catch { app.innerHTML = `<main id="main" class="fatal"><h1>Your home record could not open.</h1><p>This browser blocked local storage. Check private-browsing or site-storage settings, then reload.</p><button class="button primary" onclick="location.reload()">Try again</button></main>`; return; }
   void verifyLicense().then((result) => { const prior = plus; plus = result.valid; if (prior !== plus) render(); if (!result.valid && result.reason && result.reason !== 'missing') showToast('Pack Plus license is no longer active. Your records remain available.'); });
   window.addEventListener('online', () => { online = true; render(); showToast('Back online. Local records stayed available.'); });
