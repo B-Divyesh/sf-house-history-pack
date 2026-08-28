@@ -1,0 +1,29 @@
+{
+  "slug": "house-history-pack",
+  "title": "House History Pack",
+  "territory": "utilities",
+  "user": "A homeowner who needs one durable history of appliances, seasonal work, repairs, warranties, permits, and contractor notes that can be handed to a buyer or service person.",
+  "evidence": [
+    {
+      "url": "https://hn.algolia.com/api/v1/items/46839529",
+      "date": "2026-01-31",
+      "quote_or_summary": "The HN prompt asks what personal chore people automated, what they did manually before, and whether the automation remains dependable, highlighting continuing home-admin repetition."
+    },
+    {
+      "url": "https://github.com/FrancisLaboratories/homelogger/issues/93",
+      "date": "2026-06-26",
+      "quote_or_summary": "A home-maintenance user requests an exportable PDF report and specifically wants permit documents included."
+    }
+  ],
+  "recurrence": "Two 2026 discussions identify repeated personal administration and an explicit need to export home-maintenance evidence; losing history has financial and resale consequences.",
+  "current_workaround": "Folders of receipts/manuals, email search, a calendar reminder, a spreadsheet, or starting a new note for every repair.",
+  "incumbents_and_gap": "HomeZada, Centriq, and HomeBinder offer broad home platforms, often with accounts, marketplaces, or cloud lock-in. The gap is a local property record whose portable report is the primary artifact.",
+  "smallest_useful_product": "An offline PWA for assets, service events, next-due tasks, warranty expiry, attached local files, and a selectable PDF/ZIP house-history pack.",
+  "success_measure": "In a six-month pilot, 70% of users record at least five assets and can generate a complete maintenance packet for a chosen appliance in under two minutes.",
+  "artifact_class": "pwa-offline",
+  "monetization": "one-time",
+  "constraints": "Store sensitive files locally by default, provide encrypted export, use jurisdiction-neutral reports, and respect document copyright.",
+  "why_distinct": "The core deliverable is a portable proof/history pack, not a generic task reminder app.",
+  "confidence": 4,
+  "state": "RESEARCHED"
+}
