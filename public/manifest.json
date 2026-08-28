@@ -3,7 +3,7 @@
   "short_name": "House Pack",
   "description": "A private, portable history for your home's assets, repairs, permits, warranties, and seasonal work.",
   "id": "/?source=pwa",
-  "start_url": "/?v=2",
+  "start_url": "/?v=4",
   "scope": "/",
   "display": "standalone",
   "background_color": "#07131a",

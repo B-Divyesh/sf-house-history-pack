@@ -38,6 +38,7 @@ State transitions use 180–240 ms opacity and translate changes. Sheets rise fr
 ## Asset plan and provenance
 
 - `public/assets/house-ledger.webp`: original AI-generated editorial still used in the welcome/empty landscape. It shows a glass architectural cutaway holding document layers and maintenance traces. It clarifies the product’s promise—one property history assembled from evidence—without pretending to scan or automate the home.
+- `public/assets/social-card.jpg`: a 1200 × 630 center crop derived locally from the same original house-ledger artwork for link previews; no new source imagery was introduced.
 - App icons and interface symbols are hand-authored SVG/CSS using simple geometric forms. No third-party icon library or stock art.
 
 ### Prompt sheet

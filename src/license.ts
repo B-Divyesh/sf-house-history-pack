@@ -12,14 +12,19 @@ export function acceptReturnedLicense(): void {
   const token = url.searchParams.get('license');
   if (!token) return;
   localStorage.setItem(KEY, token);
-  localStorage.setItem(CACHE_KEY, JSON.stringify({ valid: true, checkedAt: 0 } satisfies Verdict));
+  // A returned token is only a candidate until the billing API confirms it.
+  // Never treat possession of an arbitrary string as a paid entitlement.
+  localStorage.removeItem(CACHE_KEY);
   url.searchParams.delete('license');
   history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
 }
 
 export function cachedUnlock(): boolean {
   if (!localStorage.getItem(KEY)) return false;
-  try { return (JSON.parse(localStorage.getItem(CACHE_KEY) ?? '{}') as Verdict).valid === true; } catch { return false; }
+  try {
+    const verdict = JSON.parse(localStorage.getItem(CACHE_KEY) ?? '{}') as Verdict;
+    return verdict.valid === true && verdict.checkedAt > 0;
+  } catch { return false; }
 }
 
 export async function verifyLicense(force = false): Promise<{ valid: boolean; reason?: string; offline?: boolean }> {
@@ -36,11 +41,13 @@ export async function verifyLicense(force = false): Promise<{ valid: boolean; re
     localStorage.setItem(CACHE_KEY, JSON.stringify(verdict));
     return verdict;
   } catch {
-    return { valid: cached?.valid ?? true, reason: cached?.reason, offline: true };
+    // Previously verified licenses keep working offline. New or unverified
+    // tokens stay locked when verification is unavailable.
+    return { valid: cached?.valid === true && cached.checkedAt > 0, reason: cached?.reason ?? 'unverified', offline: true };
   }
 }
 
 export function saveLicense(token: string): void {
   localStorage.setItem(KEY, token.trim());
-  localStorage.setItem(CACHE_KEY, JSON.stringify({ valid: true, checkedAt: 0 } satisfies Verdict));
+  localStorage.removeItem(CACHE_KEY);
 }

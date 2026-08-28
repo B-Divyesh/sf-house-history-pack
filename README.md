@@ -34,6 +34,8 @@ Playwright 1.58.2 is pinned because the factory image provides that browser vers
 
 ```sh
 npm test
+npm run typecheck
+npm run lint
 npm run build
 npm run preview
 ```

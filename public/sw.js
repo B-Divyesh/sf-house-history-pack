@@ -1,6 +1,6 @@
-const VERSION = 'hhp-shell-v3';
-const ASSETS = 'hhp-assets-v3';
-const SHELL = ['/', '/index.html', '/offline.html', '/manifest.webmanifest', '/assets/house-ledger.webp', '/assets/icon-192.png', '/privacy/', '/terms/'];
+const VERSION = 'hhp-shell-v4';
+const ASSETS = 'hhp-assets-v4';
+const SHELL = ['/', '/index.html', '/offline.html', '/offline.css', '/manifest.json', '/assets/house-ledger.webp', '/assets/icon-192.png', '/privacy/', '/terms/'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
@@ -11,8 +11,11 @@ self.addEventListener('install', (event) => {
     const builtAssets = [...html.matchAll(/(?:src|href)="(\/assets\/[^"?]+)"/g)].map((match) => match[1]);
     await cache.put('/index.html', response);
     await cache.addAll([...new Set(builtAssets)]);
-    await self.skipWaiting();
   })());
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {

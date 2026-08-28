@@ -1,10 +1,11 @@
 import './style.css';
-import { all, discardCurrentDatabase, loadData, put, remove, replaceData, setStorageNamespace } from './db';
+import { discardCurrentDatabase, loadData, put, putHistoryWithAttachments, remove, replaceData, setStorageNamespace } from './db';
 import { sampleData } from './demo';
 import { decryptBackup, encryptBackup, fromPortable, toPortable } from './backup';
 import { acceptReturnedLicense, cachedUnlock, checkoutUrl, saveLicense, verifyLicense } from './license';
 import type { AppData, Asset, Attachment, HistoryEvent, Task, ViewName } from './types';
 import { download, dueState, escapeHtml, formatDate, formatMoney, now, safeFilename, today, uid } from './utils';
+import { watchForServiceWorkerUpdate } from './service-worker-update';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 let data: AppData;
@@ -14,6 +15,12 @@ let plus = false;
 let pendingImport: File | null = null;
 let packAssetIds = new Set<string>();
 const demoMode = location.pathname.replace(/\/+$/, '') === '/demo';
+const VIEW_LABELS: Record<ViewName, string> = { overview: 'Overview', assets: 'Assets', history: 'History', tasks: 'Tasks', pack: 'Build pack' };
+
+function pageTitle(next: ViewName): string {
+  if (next === 'overview') return demoMode ? 'Demo — House History Pack' : 'House History Pack — Your home, documented';
+  return `${VIEW_LABELS[next]} — House History Pack`;
+}
 
 const icon = (name: string) => ({
   overview: '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v9h-6v-6h-4v6H4Z"/></svg>',
@@ -50,7 +57,7 @@ function render(): void {
       </nav>
       <main id="main" tabindex="-1">
         <div class="page-heading">
-          <div><p class="eyebrow">${escapeHtml(data.home?.name || 'A private record for your property')}</p><h1>Your home, documented.</h1>${!data.home ? '<p class="audience">For homeowners building a durable service and handover record.</p>' : ''}</div>
+          <div><p class="eyebrow">${escapeHtml(data.home?.name || 'A private record for your property')}</p><h1 tabindex="-1">Your home, documented.</h1>${!data.home ? '<p class="audience">For homeowners building a durable service and handover record.</p>' : ''}</div>
           ${data.home ? `<p class="address">${escapeHtml(data.home.address || 'Address kept private')}<span>${data.assets.length} assets · ${data.events.length} history records</span></p>` : ''}
         </div>
         ${renderView()}
@@ -65,9 +72,9 @@ function render(): void {
         <div class="local-note"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 10V8a5 5 0 0 1 10 0v2M5 10h14v10H5z"/></svg><p><strong>Private by default</strong>Your records and files stay in this browser unless you export them.</p></div>
       </aside>
     </div>
-    <footer><span>Local-first by design · AI-assisted original illustration</span><span><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><button class="footer-link" data-action="import">Import backup</button></span></footer>
+    <footer><span>House records stored on this device · AI-assisted original illustration</span><span><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="https://sociobot.in" rel="external">Built by Param Factory</a><small>v1.0.1</small><button class="footer-link" data-action="import">Import backup</button></span><input id="import-file" class="visually-hidden" type="file" accept=".hhpack,.json,application/json" aria-label="Choose a House History Pack backup to import" /></footer>
     ${dialogs()}
-    <input id="import-file" class="visually-hidden" type="file" accept=".hhpack,.json,application/json" aria-label="Choose a House History Pack backup to import" />
+    <div id="route-announcer" class="visually-hidden" role="status" aria-live="polite"></div>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
   `;
   bindEvents();
@@ -204,15 +211,17 @@ async function saveForm(form: HTMLFormElement): Promise<void> {
       const old = data.events.find((item) => item.id === form.dataset.id);
       const eventId = old?.id || uid();
       const attachments = [...(values.getAll('files') as File[])].filter((file) => file.size);
+      const oversized = attachments.find((file) => file.size > 25 * 1024 * 1024);
+      if (oversized) throw new Error(`${oversized.name} is over the 25 MB per-file limit. Choose a smaller file and try again.`);
       const attachmentIds = [...(old?.attachmentIds ?? [])];
+      const newAttachments: Attachment[] = [];
       for (const file of attachments) {
-        if (file.size > 25 * 1024 * 1024) throw new Error(`${file.name} is over the 25 MB per-file limit.`);
         const fileItem: Attachment = { id: uid(), eventId, name: file.name, type: file.type || 'application/octet-stream', size: file.size, blob: file, createdAt: stamp };
-        await put('attachments', fileItem); attachmentIds.push(fileItem.id);
+        newAttachments.push(fileItem); attachmentIds.push(fileItem.id);
       }
       const costText = String(values.get('cost')).trim();
       const item: HistoryEvent = { id: eventId, assetId: String(values.get('assetId')), kind: String(values.get('kind')) as HistoryEvent['kind'], title: String(values.get('title')).trim(), date: String(values.get('date')), contractor: String(values.get('contractor')).trim(), cost: costText ? Number(costText) : null, notes: String(values.get('notes')).trim(), attachmentIds, createdAt: old?.createdAt || stamp, updatedAt: stamp };
-      await put('events', item);
+      await putHistoryWithAttachments(item, newAttachments);
     } else if (form.id === 'task-form') {
       const old = data.tasks.find((item) => item.id === form.dataset.id);
       const repeat = String(values.get('repeatMonths')).trim();
@@ -221,7 +230,10 @@ async function saveForm(form: HTMLFormElement): Promise<void> {
     } else if (form.id === 'license-form') {
       saveLicense(String(values.get('license')));
       const result = await verifyLicense(true);
-      if (!result.valid) throw new Error('That license is not active for House History Pack. Check the token and try again.');
+      if (!result.valid) {
+        if (result.offline) throw new Error('The license could not be verified. Reconnect and try again.');
+        throw new Error('That license is not active for House History Pack. Check the token and try again.');
+      }
       plus = true;
     }
     (document.querySelector('#form-dialog') as HTMLDialogElement).close();
@@ -290,7 +302,9 @@ async function toggleTask(id: string): Promise<void> {
 async function handleImport(file: File, password?: string): Promise<void> {
   try {
     const text = await file.text();
-    const raw = JSON.parse(text) as { format?: string };
+    let raw: { format?: string };
+    try { raw = JSON.parse(text) as { format?: string }; }
+    catch { throw new Error('This backup is not valid JSON. Choose a backup created by House History Pack.'); }
     if (raw.format === 'house-history-pack-encrypted' && !password) {
       pendingImport = file;
       document.querySelector('#password-title')!.textContent = 'Unlock this backup';
@@ -301,12 +315,30 @@ async function handleImport(file: File, password?: string): Promise<void> {
     const imported = raw.format === 'house-history-pack-encrypted' ? await decryptBackup(text, password || '') : fromPortable(raw);
     if (!window.confirm(`Import “${imported.home?.name || 'this house record'}” and replace the records currently on this device?`)) return;
     await replaceData(imported); data = await loadData(); packAssetIds = new Set(data.assets.map((asset) => asset.id)); render(); showToast('Backup imported. Your previous local record was replaced.');
-  } catch (error) { showToast(error instanceof Error ? error.message : 'The backup could not be imported.'); }
+  } catch (error) {
+    if (password) throw error;
+    showToast(error instanceof Error ? error.message : 'The backup could not be imported.');
+  }
+}
+
+function setView(next: ViewName, push = true, moveFocus = true): void {
+  view = next;
+  const url = `${location.pathname}${location.search}#${next}`;
+  if (push) history.pushState({ view: next }, '', url);
+  render();
+  document.title = pageTitle(next);
+  if (moveFocus) {
+    const heading = document.querySelector<HTMLElement>('h1');
+    heading?.focus({ preventScroll: true });
+    heading?.scrollIntoView({ block: 'start' });
+    const announcer = document.querySelector<HTMLElement>('#route-announcer');
+    if (announcer) announcer.textContent = `${VIEW_LABELS[next]} view`;
+  }
 }
 
 function bindEvents(): void {
   document.querySelectorAll<HTMLElement>('[data-view]').forEach((element) => element.addEventListener('click', (event) => {
-    event.preventDefault(); view = element.dataset.view as ViewName; history.replaceState({}, '', `#${view}`); render(); document.querySelector('#main')?.scrollIntoView();
+    event.preventDefault(); setView(element.dataset.view as ViewName);
   }));
   document.querySelectorAll<HTMLElement>('[data-close]').forEach((element) => element.addEventListener('click', () => element.closest('dialog')?.close()));
   document.querySelectorAll<HTMLElement>('[data-action]').forEach((element) => element.addEventListener('click', async (event) => {
@@ -343,19 +375,34 @@ function bindEvents(): void {
       download(new Blob([JSON.stringify(portable, null, 2)], { type: 'application/json' }), `${safeFilename(data.home?.name || 'house-history')}-backup.json`);
       showToast('JSON backup ready. It is not encrypted, so store it privately.');
     }
-    if (action === 'import') document.querySelector<HTMLInputElement>('#import-file')!.click();
-    if (action === 'reload') location.reload();
+    if (action === 'import') {
+      const input = document.querySelector<HTMLInputElement>('#import-file')!;
+      input.value = '';
+      input.click();
+    }
+    if (action === 'reload') {
+      const registration = await navigator.serviceWorker?.getRegistration();
+      if (registration?.waiting) {
+        navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), { once: true });
+        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+      } else location.reload();
+    }
   }));
   document.querySelectorAll<HTMLFormElement>('form:not([method="dialog"]):not(#pack-form):not(#password-form)').forEach((form) => form.addEventListener('submit', async (event) => { event.preventDefault(); await saveForm(form); }));
   document.querySelector<HTMLFormElement>('#password-form')?.addEventListener('submit', async (event) => {
-    event.preventDefault(); const form = event.currentTarget as HTMLFormElement; const password = String(new FormData(form).get('password'));
+    event.preventDefault(); const form = event.currentTarget as HTMLFormElement; const passwordDialog = form.closest('dialog') as HTMLDialogElement; const password = String(new FormData(form).get('password'));
     try {
-      if (pendingImport) { const file = pendingImport; pendingImport = null; await handleImport(file, password); }
+      if (pendingImport) { await handleImport(pendingImport, password); pendingImport = null; }
       else { const blob = await encryptBackup(data, password); download(blob, `${safeFilename(data.home?.name || 'house-history')}-encrypted.hhpack`); showToast('Encrypted backup ready. Keep its password separately.'); }
-      (document.querySelector('#password-dialog') as HTMLDialogElement).close(); form.reset();
+      passwordDialog.close(); form.reset();
     } catch (error) { formError(form, error); }
   });
-  document.querySelector<HTMLInputElement>('#import-file')?.addEventListener('change', async (event) => { const file = (event.currentTarget as HTMLInputElement).files?.[0]; if (file) await handleImport(file); });
+  document.querySelector<HTMLInputElement>('#import-file')?.addEventListener('change', async (event) => {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    try { if (file) await handleImport(file); }
+    finally { input.value = ''; }
+  });
   document.querySelector<HTMLFormElement>('#pack-form')?.addEventListener('change', () => { packAssetIds = new Set(new FormData(document.querySelector<HTMLFormElement>('#pack-form')!).getAll('asset').map(String)); });
 }
 
@@ -363,10 +410,7 @@ async function registerServiceWorker(): Promise<void> {
   if (!('serviceWorker' in navigator)) return;
   try {
     const registration = await navigator.serviceWorker.register('/sw.js');
-    if (registration.waiting) showToast('A new version is ready.', 'Reload');
-    registration.addEventListener('updatefound', () => registration.installing?.addEventListener('statechange', () => {
-      if (registration.installing?.state === 'installed' && navigator.serviceWorker.controller) showToast('A new version is ready.', 'Reload');
-    }));
+    watchForServiceWorkerUpdate(registration, () => Boolean(navigator.serviceWorker.controller), () => showToast('A new version is ready.', 'Reload'));
     navigator.serviceWorker.addEventListener('message', (event) => { if (event.data?.type === 'APP_UPDATED') showToast('House History Pack was updated.', 'Reload'); });
   } catch { /* The app still works without installation support. */ }
 }
@@ -381,11 +425,27 @@ async function init(): Promise<void> {
     if (demoMode && !data.home) { await replaceData(sampleData()); data = await loadData(); }
     packAssetIds = new Set(data.settings.presetAssetIds.length ? data.settings.presetAssetIds : data.assets.map((asset) => asset.id));
     render();
+    document.title = pageTitle(view);
+    if (demoMode) document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute('href', 'https://house-history-pack.sociobot.in/demo');
   }
-  catch { app.innerHTML = `<main id="main" class="fatal"><h1>Your home record could not open.</h1><p>This browser blocked local storage. Check private-browsing or site-storage settings, then reload.</p><button class="button primary" onclick="location.reload()">Try again</button></main>`; return; }
-  void verifyLicense().then((result) => { const prior = plus; plus = result.valid; if (prior !== plus) render(); if (!result.valid && result.reason && result.reason !== 'missing') showToast('Pack Plus license is no longer active. Your records remain available.'); });
+  catch {
+    app.innerHTML = `<main id="main" class="fatal"><h1>Your home record could not open.</h1><p>This browser blocked local storage. Check private-browsing or site-storage settings, then reload.</p><button id="retry-open" class="button primary">Try again</button></main>`;
+    document.querySelector('#retry-open')?.addEventListener('click', () => location.reload());
+    return;
+  }
+  void verifyLicense().then((result) => {
+    const prior = plus;
+    plus = result.valid;
+    if (prior !== plus) render();
+    if (!result.valid && result.reason === 'unverified') showToast('Connect once to verify this Pack Plus license.');
+    else if (!result.valid && result.reason && result.reason !== 'missing') showToast('Pack Plus license is no longer active. Your records remain available.');
+  });
   window.addEventListener('online', () => { online = true; render(); showToast('Back online. Local records stayed available.'); });
   window.addEventListener('offline', () => { online = false; render(); showToast('You’re offline. Everything saved locally still works.'); });
+  window.addEventListener('popstate', () => {
+    const next = location.hash.slice(1) as ViewName;
+    setView(Object.hasOwn(VIEW_LABELS, next) ? next : 'overview', false);
+  });
   await registerServiceWorker();
 }
 

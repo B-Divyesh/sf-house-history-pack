@@ -1,4 +1,4 @@
-import type { AppData, Attachment, Home, Settings } from './types';
+import type { AppData, Attachment, HistoryEvent, Home, Settings } from './types';
 
 const REAL_DB_NAME = 'house-history-pack';
 const DB_VERSION = 1;
@@ -53,6 +53,19 @@ export async function put<T>(store: StoreName, value: T): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error ?? new Error('Could not save locally.'));
+  });
+}
+
+/** Save a history record and every new attachment as one all-or-nothing write. */
+export async function putHistoryWithAttachments(event: HistoryEvent, attachments: Attachment[]): Promise<void> {
+  const db = await openDb();
+  const tx = db.transaction(['events', 'attachments'], 'readwrite');
+  tx.objectStore('events').put(event);
+  for (const attachment of attachments) tx.objectStore('attachments').put(attachment);
+  await new Promise<void>((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error ?? new Error('Could not save the history and evidence files.'));
+    tx.onabort = () => reject(tx.error ?? new Error('Could not save the history and evidence files.'));
   });
 }
 

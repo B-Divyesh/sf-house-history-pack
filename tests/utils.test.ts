@@ -5,6 +5,7 @@ import { createZip } from '../src/exporter';
 import { sampleData } from '../src/demo';
 import type { AppData } from '../src/types';
 import JSZip from 'jszip';
+import { watchForServiceWorkerUpdate } from '../src/service-worker-update';
 
 describe('record formatting', () => {
   it('escapes user content before rendering', () => {
@@ -54,5 +55,25 @@ describe('sample pack contents', () => {
     expect(Object.keys(zip.files)).toEqual(expect.arrayContaining([
       'house-history-report.pdf', 'records.json', 'README.txt', 'evidence/heater-service-northline-service-receipt.txt'
     ]));
+  });
+});
+
+describe('service worker updates', () => {
+  it('announces an installed replacement after registration.installing clears', () => {
+    class Worker extends EventTarget { state = 'installing'; }
+    class Registration extends EventTarget {
+      installing: Worker | null = null;
+      waiting: unknown = null;
+    }
+    const registration = new Registration();
+    const worker = new Worker();
+    let notices = 0;
+    watchForServiceWorkerUpdate(registration, () => true, () => { notices += 1; });
+    registration.installing = worker;
+    registration.dispatchEvent(new Event('updatefound'));
+    registration.installing = null;
+    worker.state = 'installed';
+    worker.dispatchEvent(new Event('statechange'));
+    expect(notices).toBe(1);
   });
 });

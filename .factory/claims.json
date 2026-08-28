@@ -18,7 +18,7 @@
     "claim": "Records are not sent off this origin during the sample workflow.",
     "where": "Private by default note and pack builder",
     "test": "npm run test:e2e -- --grep @claim:local-only",
-    "sandbox": "fresh browser context at /demo; capture every browser request while opening the pack builder"
+    "sandbox": "fresh browser context at /demo; capture every browser request while creating a record and downloading PDF and ZIP exports"
   },
   {
     "id": "portable-exports",
@@ -29,10 +29,10 @@
   },
   {
     "id": "encrypted-backup",
-    "claim": "A password-protected full backup can be downloaded.",
+    "claim": "A password-protected AES-GCM backup rejects a wrong password and restores data with the right password.",
     "where": "encrypted backup control and README",
     "test": "npm run test:e2e -- --grep @claim:encrypted-backup",
-    "sandbox": "fresh browser context at /demo; create a backup and inspect its encrypted PBKDF2/AES-GCM envelope"
+    "sandbox": "fresh browser context at /demo; inspect the encrypted PBKDF2/AES-GCM envelope, reject a wrong password, and restore with the right password"
   },
   {
     "id": "pack-plus-price",
@@ -40,5 +40,26 @@
     "where": "landing facts and Pack Plus panel",
     "test": "npm run test:e2e -- --grep @claim:pack-plus-price",
     "sandbox": "fresh browser context at /demo; assert the displayed price and enabled free export controls"
+  },
+  {
+    "id": "maintenance-tracking",
+    "claim": "The record tracks warranty dates and schedules the next repeating maintenance task.",
+    "where": "README, assets, tasks, and next signals",
+    "test": "npm run test:e2e -- --grep @claim:maintenance-tracking",
+    "sandbox": "fresh browser context at /demo; inspect a warranty date, complete the repeating task, and assert that its next occurrence is scheduled"
+  },
+  {
+    "id": "no-account-tracking",
+    "claim": "The app uses no account, analytics, advertising, cloud sync, CDN font, or tracking request.",
+    "where": "README and privacy page",
+    "test": "npm run test:e2e -- --grep @claim:no-account-tracking",
+    "sandbox": "fresh browser context at /demo; capture all requests, inspect loaded script/font links, and assert that there is no account control"
+  },
+  {
+    "id": "license-verification",
+    "claim": "Pack Plus stays locked until the Sociobot billing API verifies a license token.",
+    "where": "Pack Plus restore form and privacy page",
+    "test": "npm run test:e2e -- --grep @claim:license-verification",
+    "sandbox": "fresh browser context at /demo; make license verification return 429 and then go offline; assert that arbitrary tokens never expose paid controls"
   }
 ]
