@@ -60,11 +60,16 @@ Completed on 2026-08-28:
 Build command: `npm run build`
 Publish directory: `dist/`
 
-The static host must publish `dist/staticwebapp.config.json`; this is the
-deployment configuration that supplies the SPA fallback and response policy.
-After the repair commit is pushed, verify the deployed `/`, `/demo`,
-`/robots.txt`, `/sitemap.xml`, `/manifest.webmanifest`, and `/404.html` URLs
-and inspect their configured headers.
+The repair source was pushed to `main` as
+`c51e08b916fa4b34bac54d6fc4bf87e16c1a47e8`. The static host must publish
+`dist/staticwebapp.config.json`; this supplies the SPA fallback and response
+policy. At 2026-08-28 10:19 UTC the public hostname still served the preceding
+artifact (`index-DsPIurQt.js`; `/robots.txt` was HTTP 404), so the factory's
+static publication has not yet picked up the pushed commit. No deployment
+command, host credential, or per-site host mapping is present in this
+repository, and shared hosting infrastructure is deliberately out of scope.
+On publication, verify deployed `/`, `/demo`, `/robots.txt`, `/sitemap.xml`,
+`/manifest.webmanifest`, and `/404.html`, including the configured headers.
 
 ## Known limits
 
