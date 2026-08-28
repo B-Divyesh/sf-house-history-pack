@@ -1,5 +1,19 @@
 # House History Pack — build handoff
 
+## Independent verifier release status — FAIL (2026-08-28)
+
+Candidate `3d5e19b73f11af62e82e2e1ace2b0d8b67b988e9` at
+https://house-history-pack.sociobot.in was independently checked and **must
+not be released**. The mandatory `.factory/claims.json` is missing, and the
+live first screen has no one-click **“Try it with sample data”** sandbox. The
+`/demo` URL is the empty real application rather than a separate sample-data
+namespace. These are release blockers under the verification work order.
+
+See `.factory/verification.md` for exact commands, live evidence, passed core
+workflow/PWA/a11y checks, headers, rate-limit evidence, and the complete
+severity-ranked defect list. This verifier changed documentation only, not
+product code.
+
 ## Shipped
 
 - Complete local property record: editable home identity and assets; service, repair, permit, inspection, and contractor-note history; warranty signals; one-off and repeating next-due tasks; locally stored attachments with download.
