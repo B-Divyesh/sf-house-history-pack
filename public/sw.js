@@ -1,6 +1,6 @@
-const VERSION = 'hhp-shell-v4';
-const ASSETS = 'hhp-assets-v4';
-const SHELL = ['/', '/index.html', '/offline.html', '/offline.css', '/manifest.json', '/assets/house-ledger.webp', '/assets/icon-192.png', '/privacy/', '/terms/'];
+const VERSION = 'hhp-shell-v5';
+const ASSETS = 'hhp-assets-v5';
+const SHELL = ['/', '/index.html', '/demo', '/demo.html', '/offline.html', '/offline.css', '/manifest.json', '/assets/house-ledger.webp', '/assets/icon-192.png', '/privacy/', '/terms/'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {

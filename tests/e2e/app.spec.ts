@@ -339,26 +339,40 @@ test('section navigation preserves history, moves focus, and announces the view'
   await expect(page.locator('#route-announcer')).toHaveText('Assets view');
 });
 
-test('public routes have complete titles, social metadata, touch targets, and install links', async ({ page }) => {
+test('direct demo serves its own metadata without JavaScript', async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
+  const response = await page.goto('http://127.0.0.1:4173/demo');
+  expect(response?.status()).toBe(200);
+  await expect(page).toHaveTitle('Demo — House History Pack');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://house-history-pack.sociobot.in/demo');
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', 'Demo — House History Pack');
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', 'https://house-history-pack.sociobot.in/demo');
+  await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute('content', 'Demo — House History Pack');
+  await context.close();
+});
+
+test('public routes have complete titles, aligned social metadata, touch targets, and install links', async ({ page }) => {
   const routes = [
-    ['/', 'House History Pack — Keep home history ready'],
-    ['/?demo=1', 'Demo — House History Pack'],
-    ['/privacy/', 'Privacy — House History Pack'],
-    ['/terms/', 'Terms — House History Pack'],
-    ['/404.html', 'Page not found — House History Pack']
+    ['/', 'House History Pack — Keep home history ready', 'https://house-history-pack.sociobot.in/'],
+    ['/?demo=1', 'Demo — House History Pack', 'https://house-history-pack.sociobot.in/demo'],
+    ['/demo', 'Demo — House History Pack', 'https://house-history-pack.sociobot.in/demo'],
+    ['/privacy/', 'Privacy — House History Pack', 'https://house-history-pack.sociobot.in/privacy/'],
+    ['/terms/', 'Terms — House History Pack', 'https://house-history-pack.sociobot.in/terms/'],
+    ['/404.html', 'Page not found — House History Pack', 'https://house-history-pack.sociobot.in/404.html']
   ] as const;
-  for (const [route, title] of routes) {
+  for (const [route, title, canonical] of routes) {
     await page.goto(route);
     await expect(page).toHaveTitle(title);
     await expect(page.locator('meta[name="description"]')).toHaveCount(1);
-    await expect(page.locator('link[rel="canonical"]')).toHaveCount(1);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', canonical);
     await expect(page.locator('meta[property="og:type"]')).toHaveAttribute('content', 'website');
-    await expect(page.locator('meta[property="og:title"]')).toHaveCount(1);
+    await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', title);
     await expect(page.locator('meta[property="og:description"]')).toHaveCount(1);
-    await expect(page.locator('meta[property="og:url"]')).toHaveCount(1);
+    await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', canonical);
     await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /social-card\.jpg$/);
     await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary_large_image');
-    await expect(page.locator('meta[name="twitter:title"]')).toHaveCount(1);
+    await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute('content', title);
     await expect(page.locator('meta[name="twitter:description"]')).toHaveCount(1);
     await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute('content', /social-card\.jpg$/);
   }
@@ -370,7 +384,7 @@ test('public routes have complete titles, social metadata, touch targets, and in
   expect(brand?.height).toBeGreaterThanOrEqual(44);
 });
 
-test('first actions remain visible at 1280 × 720 and cited mobile controls meet the 44px target', async ({ page }, testInfo) => {
+test('first actions and mobile first-screen facts stay clear of the fixed dock', async ({ page }, testInfo) => {
   if (testInfo.project.name === 'chromium') {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/');
@@ -388,6 +402,18 @@ test('first actions remain visible at 1280 × 720 and cited mobile controls meet
 
   if (testInfo.project.name === 'mobile') {
     await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    const dock = await page.locator('.side-nav').boundingBox();
+    expect(dock, 'fixed mobile dock has a box').not.toBeNull();
+    const facts = page.locator('.hero-facts li');
+    expect(await facts.count()).toBe(3);
+    for (const fact of await facts.all()) {
+      const box = await fact.boundingBox();
+      expect(box, 'hero fact has a box').not.toBeNull();
+      expect(box!.y, 'hero fact starts within the first screen').toBeGreaterThanOrEqual(0);
+      expect(box!.y + box!.height, 'hero fact ends above the fixed dock').toBeLessThanOrEqual(dock!.y);
+    }
     await page.goto('/demo');
     const namedControls = ['Reset demo', 'Start for real'];
     for (const name of namedControls) {

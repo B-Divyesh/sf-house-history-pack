@@ -18,11 +18,34 @@ let packAssetIds = new Set<string>();
 // Both select the demo database before any storage call is made.
 const demoMode = location.pathname.replace(/\/+$/, '') === '/demo' || new URLSearchParams(location.search).get('demo') === '1';
 const demoUrl = '/?demo=1';
+const siteUrl = 'https://house-history-pack.sociobot.in';
 const VIEW_LABELS: Record<ViewName, string> = { overview: 'Overview', assets: 'Assets', history: 'History', tasks: 'Tasks', pack: 'Build pack' };
 
 function pageTitle(next: ViewName): string {
   if (next === 'overview') return demoMode ? 'Demo — House History Pack' : 'House History Pack — Keep home history ready';
   return `${VIEW_LABELS[next]} — House History Pack`;
+}
+
+function setMeta(selector: string, content: string): void {
+  document.querySelector<HTMLMetaElement>(selector)?.setAttribute('content', content);
+}
+
+function syncRouteMetadata(next: ViewName): void {
+  const demo = demoMode;
+  const title = demo ? 'Demo — House History Pack' : 'House History Pack — Keep home history ready';
+  const description = demo
+    ? 'Explore a separate House History Pack sample. It stays in a disposable browser-only demo space.'
+    : 'Keep home records, repairs, permits, warranties, and evidence ready for a service call or handover.';
+  const url = `${siteUrl}${demo ? '/demo' : '/'}`;
+
+  document.title = pageTitle(next);
+  document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute('href', url);
+  setMeta('meta[name="description"]', description);
+  setMeta('meta[property="og:title"]', title);
+  setMeta('meta[property="og:description"]', description);
+  setMeta('meta[property="og:url"]', url);
+  setMeta('meta[name="twitter:title"]', title);
+  setMeta('meta[name="twitter:description"]', description);
 }
 
 const icon = (name: string) => ({
@@ -337,7 +360,7 @@ function setView(next: ViewName, push = true, moveFocus = true): void {
   const url = `${location.pathname}${location.search}#${next}`;
   if (push) history.pushState({ view: next }, '', url);
   render();
-  document.title = pageTitle(next);
+  syncRouteMetadata(next);
   if (moveFocus) {
     const heading = document.querySelector<HTMLElement>('h1');
     heading?.focus({ preventScroll: true });
@@ -428,7 +451,6 @@ async function registerServiceWorker(): Promise<void> {
 
 async function init(): Promise<void> {
   setStorageNamespace(demoMode ? 'demo' : 'real');
-  if (demoMode) document.title = 'Demo — House History Pack';
   acceptReturnedLicense(); plus = cachedUnlock();
   const hash = location.hash.slice(1) as ViewName; if (['overview', 'assets', 'history', 'tasks', 'pack'].includes(hash)) view = hash;
   try {
@@ -436,8 +458,7 @@ async function init(): Promise<void> {
     if (demoMode && !data.home) { await replaceData(sampleData()); data = await loadData(); }
     packAssetIds = new Set(data.settings.presetAssetIds.length ? data.settings.presetAssetIds : data.assets.map((asset) => asset.id));
     render();
-    document.title = pageTitle(view);
-    if (demoMode) document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute('href', 'https://house-history-pack.sociobot.in/?demo=1');
+    syncRouteMetadata(view);
   }
   catch {
     app.innerHTML = `<main id="main" class="fatal"><h1>Your home record could not open.</h1><p>This browser blocked local storage. Check private-browsing or site-storage settings, then reload.</p><button id="retry-open" class="button primary">Try again</button></main>`;

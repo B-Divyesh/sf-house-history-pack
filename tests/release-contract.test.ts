@@ -2,14 +2,14 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 describe('static release contract', () => {
-  it('rewrites only the demo route and sends unknown routes to the designed 404', () => {
+  it('rewrites the direct demo route to its dedicated shell and sends unknown routes to the designed 404', () => {
     const config = JSON.parse(readFileSync('public/staticwebapp.config.json', 'utf8')) as {
       navigationFallback?: unknown;
       routes: { route: string; rewrite?: string }[];
       responseOverrides: Record<string, { rewrite: string }>;
     };
     expect(config.navigationFallback).toBeUndefined();
-    expect(config.routes).toContainEqual(expect.objectContaining({ route: '/demo', rewrite: '/index.html' }));
+    expect(config.routes).toContainEqual(expect.objectContaining({ route: '/demo', rewrite: '/demo.html' }));
     expect(config.responseOverrides['404']).toEqual({ rewrite: '/404.html' });
   });
 
@@ -32,6 +32,14 @@ describe('static release contract', () => {
       }
       expect(page).toContain('rel="canonical"');
     }
+  });
+
+  it('ships a raw demo shell whose metadata identifies the demo', () => {
+    const demo = readFileSync('demo.html', 'utf8');
+    expect(demo).toContain('<title>Demo — House History Pack</title>');
+    expect(demo).toContain('href="https://house-history-pack.sociobot.in/demo"');
+    expect(demo).toContain('content="Demo — House History Pack"');
+    expect(demo).toContain('content="https://house-history-pack.sociobot.in/demo"');
   });
 
   it('gives every declared claim exactly one tagged regression test', () => {
