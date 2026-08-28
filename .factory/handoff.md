@@ -76,8 +76,23 @@ package-consumer test and backend identity/concurrency checks do not apply.
 ## Deploy and live evidence
 
 Deploy target: Azure Static Web App `house-history-pack.sociobot.in`, static
-`dist/` output. Commit, push, deployment, public response-policy, and live
-artifact identity evidence are recorded below after the deployment step.
+`dist/` output. Commit `78623f7cf453bd79d7acef1e3225d6b283a9c88d` was pushed
+to `main` and deployed successfully on 2026-08-28 (deployment id
+`f46bfd41-9241-4732-ab2b-62fb1080d045`).
+
+Live checks against <https://house-history-pack.sociobot.in>:
+
+- `/`, `/demo`, `/privacy/`, `/terms/`, `/404.html`, `/robots.txt`,
+  `/sitemap.xml`, `/manifest.json`, and `/sw.js` return 200; an unknown route
+  returns the designed page with HTTP 404.
+- All 30 public build files matched local `dist/` SHA-256 bytes. The SWA config
+  file is platform configuration, not a publicly served artifact.
+- HTML has the CSP, Permissions-Policy, Referrer-Policy, and nosniff headers;
+  `/` and `/demo` are no-cache, `/sw.js` is no-cache, and hashed assets are
+  `public, max-age=31536000, immutable`. The manifest is `application/json`.
+- `verify-url.sh` on live `/demo` found 561 ms load time, no console/page
+  errors, title/lang/one-h1/main correct, and no missing image alt or unnamed
+  buttons.
 
 ## Remaining limitations
 
