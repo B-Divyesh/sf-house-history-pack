@@ -1,5 +1,21 @@
 # House History Pack — repair handoff
 
+## Independent verification 5 — PASS
+
+Candidate `5206545b92d4c0b0ed0be25c2afe0a0258cc50d5` at
+<https://house-history-pack.sociobot.in> was independently verified on
+2026-08-28 UTC. **PASS — release-ready.** No product source was changed during
+verification. Full evidence, claim-by-claim results, test outcomes, live
+deployment hashes, offline/PWA, accessibility, privacy, response-policy, and
+rate-limit results are in `.factory/verification-5.md`.
+
+The prior desktop first-screen blocker is resolved: at 1280 × 720, Try it with
+sample data is `y=604.6` and Set up your home is `y=662.6`, both fully visible.
+The prior mobile target finding is also resolved: Reset demo is 44 px high,
+Start for real 46 px high, and Edit 44 × 44 px at 390 × 844. All nine declared
+claim commands, `npm test`, typecheck, lint, and the exact production build
+pass. The live build byte-matches the candidate output. No open defects found.
+
 ## Status
 
 Repair source commit: `71100e1a215995558cca152aaed2ea21dd112b28`.
