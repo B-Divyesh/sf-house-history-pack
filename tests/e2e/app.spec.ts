@@ -305,6 +305,39 @@ test('metadata, touch target, and manifest links satisfy the public-site contrac
   expect(brand?.height).toBeGreaterThanOrEqual(44);
 });
 
+test('first actions remain visible at 1280 × 720 and cited mobile controls meet the 44px target', async ({ page }, testInfo) => {
+  if (testInfo.project.name === 'chromium') {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto('/');
+    for (const name of ['Try it with sample data', 'Set up your home']) {
+      const box = await page.getByRole('button', { name }).boundingBox();
+      expect(box, `${name} has a box`).not.toBeNull();
+      expect(box!.y, `${name} starts in the first screen`).toBeGreaterThanOrEqual(0);
+      expect(box!.y + box!.height, `${name} ends in the first screen`).toBeLessThanOrEqual(720);
+    }
+  }
+
+  if (testInfo.project.name === 'mobile') {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/demo');
+    const namedControls = ['Reset demo', 'Start for real'];
+    for (const name of namedControls) {
+      const box = await page.getByRole('button', { name }).boundingBox();
+      expect(box, `${name} has a box`).not.toBeNull();
+      expect(box!.width, `${name} width`).toBeGreaterThanOrEqual(44);
+      expect(box!.height, `${name} height`).toBeGreaterThanOrEqual(44);
+    }
+    const edits = page.getByRole('button', { name: 'Edit' });
+    expect(await edits.count()).toBeGreaterThan(0);
+    for (const edit of await edits.all()) {
+      const box = await edit.boundingBox();
+      expect(box, 'timeline edit has a box').not.toBeNull();
+      expect(box!.width, 'timeline edit width').toBeGreaterThanOrEqual(44);
+      expect(box!.height, 'timeline edit height').toBeGreaterThanOrEqual(44);
+    }
+  }
+});
+
 test('all public pages have no axe violations', async ({ page }) => {
   for (const route of ['/', '/demo', '/privacy/', '/terms/', '/404.html']) {
     await page.goto(route);
