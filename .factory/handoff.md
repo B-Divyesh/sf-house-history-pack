@@ -1,68 +1,38 @@
-# House History Pack — polish-1 handoff
+# House History Pack — review-2 handoff
 
 ## Status
 
-Released and verified. Repair commit
-`c05194582fee68780ca319a0fde3be3269737b9b` is pushed to `main` and deployed
-to <https://house-history-pack.sociobot.in>. Azure Static Web Apps deployment:
-`d83614d4-5178-4908-8148-63e4db4944d7`.
+Review round 2 is complete and committed separately from product code. The live
+product is functionally healthy, but the review verdict is **FAIL** because
+five minor landing-copy/structure findings remain. See
+`.factory/review-2.md` for exact quotes and fixes.
 
-The query demo URL is <https://house-history-pack.sociobot.in/?demo=1>; `/demo`
-remains an equivalent short route. Demo records use `demo:house-history-pack`;
-real records use `house-history-pack`.
+## What was done
 
-## What changed
+- Performed a cold live read at 390 × 844 and 1280 × 720.
+- Exercised the live one-click demo, reset, service-worker offline reload,
+  same-origin request capture, isolation coverage, Axe scan, route metadata,
+  unknown-route 404, hash-route Back/focus/announcement behavior, and link
+  crawl.
+- Read the brief, design, claims, every earlier review/polish/verification
+  record, and the previous handoff.
+- Cloned `b816da0` freshly to
+  `/tmp/house-history-pack-review-2.pquA4x`, ran `npm ci`, then ran every
+  exact claims-manifest command. All ten passed in desktop and mobile.
+- Ran `npm test` in the working checkout (10 unit tests and 38 browser
+  executions passed) and `npm run build` (produced `dist/`).
 
-- Added a browser-storage/isolation claim and fresh-context proof.
-- Made `?demo=1` the one-click demo destination while retaining `/demo`.
-- Completed 404, Privacy, and Terms social metadata and made the 404 skip link
-  target its focusable main landmark.
-- Replaced the three vague landing labels and tightened README Pack Plus and
-  test-summary copy.
-- Added the required verb-first catalog description.
+No product source, build output, deployment, or external state was changed.
 
-See `.factory/polish-1.md` for a finding-by-finding closure map.
+## Remaining work
 
-## Verification
+1. Replace the h1 status line with a job-focused headline.
+2. Replace the two metaphorical record headings with plain content labels.
+3. Explain Pack Plus's exact unlocks beside its landing price.
+4. Add the required three-step “How it works” section without a generic-card
+   treatment.
+5. Remove or claim-test the footer's “AI-assisted original illustration”
+   provenance statement.
 
-From `/work/repo`:
-
-    npm run typecheck
-    npm run lint
-    npm run test:unit
-    npm test
-    npm run build
-
-All passed. `npm test` reports 10 unit/release-contract checks and 37 browser
-checks passing, with one browser-specific boundary case skipped in the mobile
-project.
-
-From fresh clone `/tmp/house-history-pack-clean` at the repair commit:
-
-    npm ci
-    npm run test:e2e -- --grep @claim:browser-local-storage
-    npm run test:e2e -- --grep @claim:demo-isolated
-    npm run test:e2e -- --grep @claim:offline-reload
-    npm run test:e2e -- --grep @claim:local-only
-    npm run test:e2e -- --grep @claim:portable-exports
-    npm run test:e2e -- --grep @claim:encrypted-backup
-    npm run test:e2e -- --grep @claim:pack-plus-price
-    npm run test:e2e -- --grep @claim:maintenance-tracking
-    npm run test:e2e -- --grep @claim:no-account-tracking
-    npm run test:e2e -- --grep @claim:license-verification
-
-Every exact claim command passed in both desktop Chromium and the 390 px mobile
-project. They cover demo isolation, offline reload, same-origin privacy,
-PDF/ZIP export, encrypted backup recovery, price/free exports, maintenance,
-no-tracking, and license failure behavior.
-
-Post-deploy, `verify-url.sh` passed for `/` and `/?demo=1`. Live Playwright
-Axe reported zero violations for `/`, `/?demo=1`, `/privacy/`, `/terms/`, and
-`/404.html`. An unknown live URL returned the designed page with HTTP 404.
-Live mobile Lighthouse scored Performance 100 and Accessibility 100 (LCP 1202
-ms, CLS 0, TBT 0). Evidence is in `.factory/evidence/polish-1/`.
-
-## Known gaps and next steps
-
-None. The product remains a static, offline PWA; deployment is handled by the
-factory workflow.
+After implementing those items, rerun the ten exact claim commands,
+`npm test`, and `npm run build`, then repeat the live first-read review.
