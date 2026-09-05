@@ -4,6 +4,9 @@
 
 The two review-4 blockers are repaired and deployed. The implementation is
 commit `8deb71db9fa4d4d6c274bf0c0ca4730a0667b38b`.
+The verification and evidence documentation was first committed separately as
+`5a16be08cb4b41d938b5e7ad6d6cc63b35805a96`; it contains no deployable product
+change.
 
 The job is to keep a homeowner's appliances, repairs, permits, warranties,
 and evidence ready for a service visit or handover. The audience is homeowners
