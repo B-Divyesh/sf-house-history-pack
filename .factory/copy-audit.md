@@ -6,11 +6,12 @@
 | --- | ---: | --- |
 | Keep your home history ready to share. | 7 | pass |
 | For homeowners building a durable service and handover record. | 9 | pass |
-| Keep appliances, repairs, permits, warranties, and the evidence behind them together—ready for the next service call or handover. | 17 | pass |
-| Loads a sample house in a separate, disposable space. | 10 | pass |
+| Keep appliances, repairs, permits, warranties, and evidence ready for service or handover. | 12 | pass |
+| Loads a separate, disposable sample house. | 6 | pass |
 | Stored on this device | 4 | pass |
 | Works offline after the first visit | 6 | pass |
 | Pack Plus is $29 once for custom cover text and saved pack settings | 13 | pass |
+| Sample asset / Water heater / Warranty until Nov 6, 2029 | 9 | pass |
 
 ## Revised review copy
 

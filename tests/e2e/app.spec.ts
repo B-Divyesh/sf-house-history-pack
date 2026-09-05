@@ -105,6 +105,8 @@ test('@claim:demo-isolated Sample data is one click, isolated, and resettable', 
   await page.getByRole('button', { name: 'Try it with sample data' }).click();
   await expect(page).toHaveURL(/\?demo=1$/);
   await expect(page.getByText('Demo — sample data, nothing is saved')).toBeVisible();
+  await expect(page.locator('[data-demo-record]')).toContainText('Water heater');
+  await expect(page.locator('[data-demo-record]')).toContainText('Warranty until');
   await page.getByRole('button', { name: 'Assets' }).first().click();
   await expect(page.getByRole('heading', { name: 'Water heater' })).toBeVisible();
   const databaseNames = await page.evaluate(async () => (await indexedDB.databases()).map((database) => database.name));
@@ -384,7 +386,7 @@ test('public routes have complete titles, aligned social metadata, touch targets
   expect(brand?.height).toBeGreaterThanOrEqual(44);
 });
 
-test('first actions and mobile first-screen facts stay clear of the fixed dock', async ({ page }, testInfo) => {
+test('first actions, their sample explanation, and mobile demo records stay visible without scrolling', async ({ page }, testInfo) => {
   if (testInfo.project.name === 'chromium') {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/');
@@ -397,6 +399,17 @@ test('first actions and mobile first-screen facts stay clear of the fixed dock',
       expect(box, `${name} has a box`).not.toBeNull();
       expect(box!.y, `${name} starts in the first screen`).toBeGreaterThanOrEqual(0);
       expect(box!.y + box!.height, `${name} ends in the first screen`).toBeLessThanOrEqual(720);
+    }
+    const helper = await page.getByText('Loads a separate, disposable sample house.', { exact: true }).boundingBox();
+    expect(helper, 'sample explanation has a box').not.toBeNull();
+    expect(helper!.y, 'sample explanation starts in the first screen').toBeGreaterThanOrEqual(0);
+    expect(helper!.y + helper!.height, 'sample explanation ends in the first screen').toBeLessThanOrEqual(720);
+    for (const fact of await page.locator('.hero-facts li').all()) {
+      const factBox = await fact.boundingBox();
+      expect(factBox, 'desktop fact has a box').not.toBeNull();
+      expect(factBox!.y + factBox!.height, 'desktop fact ends in the first screen').toBeLessThanOrEqual(720);
+      const intersects = helper!.x < factBox!.x + factBox!.width && helper!.x + helper!.width > factBox!.x && helper!.y < factBox!.y + factBox!.height && helper!.y + helper!.height > factBox!.y;
+      expect(intersects, 'sample explanation does not overlap a fact').toBe(false);
     }
   }
 
@@ -414,7 +427,24 @@ test('first actions and mobile first-screen facts stay clear of the fixed dock',
       expect(box!.y, 'hero fact starts within the first screen').toBeGreaterThanOrEqual(0);
       expect(box!.y + box!.height, 'hero fact ends above the fixed dock').toBeLessThanOrEqual(dock!.y);
     }
-    await page.goto('/demo');
+    const helper = await page.getByText('Loads a separate, disposable sample house.', { exact: true }).boundingBox();
+    expect(helper, 'mobile sample explanation has a box').not.toBeNull();
+    expect(helper!.y + helper!.height, 'mobile sample explanation ends above the fixed dock').toBeLessThanOrEqual(dock!.y);
+    for (const fact of await facts.all()) {
+      const factBox = await fact.boundingBox();
+      const intersects = helper!.x < factBox!.x + factBox!.width && helper!.x + helper!.width > factBox!.x && helper!.y < factBox!.y + factBox!.height && helper!.y + helper!.height > factBox!.y;
+      expect(intersects, 'mobile sample explanation does not overlap a fact').toBe(false);
+    }
+    await page.getByRole('button', { name: 'Try it with sample data' }).click();
+    await expect(page).toHaveURL(/\?demo=1$/);
+    expect(await page.evaluate(() => window.scrollY), 'demo opens at the top').toBe(0);
+    const demoRecord = page.locator('[data-demo-record]');
+    await expect(demoRecord).toContainText('Water heater');
+    await expect(demoRecord).toContainText('Warranty until');
+    const demoRecordBox = await demoRecord.boundingBox();
+    expect(demoRecordBox, 'named sample record has a box').not.toBeNull();
+    expect(demoRecordBox!.y, 'named sample record starts in the phone viewport').toBeGreaterThanOrEqual(0);
+    expect(demoRecordBox!.y + demoRecordBox!.height, 'named sample record ends above the fixed dock').toBeLessThanOrEqual(dock!.y);
     const namedControls = ['Reset demo', 'Start for real'];
     for (const name of namedControls) {
       const box = await page.getByRole('button', { name }).boundingBox();

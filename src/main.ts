@@ -117,15 +117,15 @@ function renderView(): string {
 function renderOverview(): string {
   const hasRecords = data.assets.length || data.events.length;
   const recent = [...data.events].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4);
+  const sampleAsset = demoMode ? data.assets.find((asset) => asset.id === 'water-heater') ?? data.assets[0] : undefined;
   return `<section class="overview-view" aria-labelledby="overview-title">
     <h2 id="overview-title" class="visually-hidden">Home overview</h2>
     <div class="hero-pane ${hasRecords ? 'compact-hero' : ''}">
       <picture><source srcset="/assets/house-ledger.webp" type="image/webp"><img src="/assets/house-ledger.webp" width="1200" height="800" alt="A glass architectural cutaway of a house with repair documents organized through its rooms" fetchpriority="high" decoding="async"></picture>
       <div class="hero-copy">
-        <p class="eyebrow">Keep your home history ready to share</p>
         <h2>${hasRecords ? `Your home records are ready to use.` : `Keep every home record together.`}</h2>
-        <p>Keep appliances, repairs, permits, warranties, and the evidence behind them together—ready for the next service call or handover.</p>
-        ${!data.home ? `<div class="hero-actions"><button class="button primary" data-action="try-demo">Try it with sample data</button><button class="button secondary" data-action="setup-home">Set up your home</button><small>Loads a sample house in a separate, disposable space.</small></div><ul class="hero-facts"><li>Stored on this device</li><li>Works offline after the first visit</li><li>Pack Plus is $29 once for custom cover text and saved pack settings</li></ul>` : `<button class="button primary" data-action="quick-add">Add your next record</button>`}
+        ${sampleAsset ? `<article class="demo-record-preview" data-demo-record aria-label="Sample record: ${escapeHtml(sampleAsset.name)}"><p>Sample asset</p><h3>${escapeHtml(sampleAsset.name)}</h3><small>Warranty until ${formatDate(sampleAsset.warrantyUntil)}</small></article>` : `<p class="hero-summary">Keep appliances, repairs, permits, warranties, and evidence ready for service or handover.</p>`}
+        ${!data.home ? `<div class="hero-actions"><button class="button primary" data-action="try-demo">Try it with sample data</button><small>Loads a separate, disposable sample house.</small><button class="button secondary" data-action="setup-home">Set up your home</button></div><ul class="hero-facts"><li>Stored on this device</li><li>Works offline after the first visit</li><li>Pack Plus is $29 once for custom cover text and saved pack settings</li></ul>` : `<button class="button primary" data-action="quick-add">Add your next record</button>`}
       </div>
     </div>
     <div class="metric-strip" aria-label="Record summary">
